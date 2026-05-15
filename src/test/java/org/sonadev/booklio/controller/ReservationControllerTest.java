@@ -54,4 +54,23 @@ class ReservationControllerTest {
                 .andExpect(jsonPath("$.resourceId").value(1));
 
     }
+
+    @Test
+    void shoulReturnBadRequestWhenServiceFails() throws Exception {
+
+        when(reservationService.createReservation(any()))
+                .thenThrow(new RuntimeException("Resource not available"));
+
+        mockMvc.perform(post("/reservations")
+                .contentType("application/json")
+                .content("""
+                {
+                    "userId": 1,
+                    "resourceId": 1,
+                    "startDate": "2026-05-10",
+                    "endDate": "2026-05-12"
+                }
+                """))
+                .andExpect(status().isBadRequest());
+    }
 }
