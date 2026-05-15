@@ -56,7 +56,7 @@ class ReservationControllerTest {
     }
 
     @Test
-    void shoulReturnBadRequestWhenServiceFails() throws Exception {
+    void shouldReturnBadRequestWhenServiceFails() throws Exception {
 
         when(reservationService.createReservation(any()))
                 .thenThrow(new RuntimeException("Resource not available"));
