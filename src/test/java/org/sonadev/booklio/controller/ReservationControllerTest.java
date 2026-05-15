@@ -1,7 +1,6 @@
 package org.sonadev.booklio.controller;
 
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.sonadev.booklio.dto.ReservationResponse;
 import org.sonadev.booklio.service.ReservationService;
 import org.springframework.beans.factory.annotation.Autowired;
