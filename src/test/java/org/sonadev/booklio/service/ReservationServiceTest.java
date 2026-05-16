@@ -7,6 +7,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.sonadev.booklio.dto.ReservationRequest;
 import org.sonadev.booklio.dto.ReservationResponse;
+import org.sonadev.booklio.exception.InvalidReservationException;
+import org.sonadev.booklio.exception.ReservationConflictException;
 import org.sonadev.booklio.model.Reservation;
 import org.sonadev.booklio.model.Resource;
 import org.sonadev.booklio.model.User;
@@ -56,7 +58,7 @@ public class ReservationServiceTest {
     }
 
     @Test
-    void shoulReturnFalseWhenNoConflictsExist(){
+    void shouldReturnFalseWhenNoConflictsExist(){
         when(reservationRepository.findConflicts(
                 anyLong(),
                 any(LocalDate.class),
@@ -125,7 +127,7 @@ public class ReservationServiceTest {
     }
 
     @Test
-    void shouldNotSaveREservationWhenConflictsExist(){
+    void shouldNotSaveReservationWhenConflictsExist(){
         ReservationRequest dto = new ReservationRequest();
         dto.setUserId(1L);
         dto.setResourceId(1L);
@@ -151,7 +153,7 @@ public class ReservationServiceTest {
         )).thenReturn(List.of(new Reservation()));
 
         assertThrows(
-                RuntimeException.class,
+                ReservationConflictException.class,
                 () -> reservationService.createReservation(dto)
         );
 
@@ -166,8 +168,8 @@ public class ReservationServiceTest {
         dto.setStartDate(LocalDate.now().plusDays(5));
         dto.setEndDate(LocalDate.now());
 
-        RuntimeException exception = assertThrows(
-                RuntimeException.class,
+        InvalidReservationException exception = assertThrows(
+                InvalidReservationException.class,
                 () -> reservationService.createReservation(dto)
         );
 
