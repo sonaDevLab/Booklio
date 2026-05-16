@@ -2,6 +2,9 @@ package org.sonadev.booklio.service;
 
 import org.sonadev.booklio.dto.ReservationRequest;
 import org.sonadev.booklio.dto.ReservationResponse;
+import org.sonadev.booklio.exception.InvalidReservationException;
+import org.sonadev.booklio.exception.ReservationConflictException;
+import org.sonadev.booklio.exception.ResourceNotFoundException;
 import org.sonadev.booklio.model.Reservation;
 import org.sonadev.booklio.model.Resource;
 import org.sonadev.booklio.model.User;
@@ -35,15 +38,15 @@ public class ReservationService {
 
         // Validar fechas
         if(dto.getStartDate().isAfter(dto.getEndDate())){
-            throw new RuntimeException("Start date cannot be after end date");
+            throw new InvalidReservationException("Start date cannot be after end date");
         }
 
         // Buscar user y resource
         User user = userRepository.findById(dto.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Resource resource = resourceRepository.findById(dto.getResourceId())
-                .orElseThrow(() -> new RuntimeException("Resource not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found"));
 
         // Comprobar disponibilidad
         boolean available = isAvailable(
@@ -53,7 +56,7 @@ public class ReservationService {
         );
 
         if(!available){
-            throw new RuntimeException("Resource not available for selected dates");
+            throw new ReservationConflictException("Resource already booked");
         }
 
         // Crear reserva
