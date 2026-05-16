@@ -73,4 +73,20 @@ class ReservationControllerTest {
                 """))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void shouldReturnBadRequestWhenUserIdIsNull() throws Exception {
+        mockMvc.perform(post("/reservations")
+                .contentType("application/json")
+                .content("""
+                {
+                    "userId": null,
+                    "resourceId": 1,
+                    "startDate": "2026-05-10",
+                    "endDate": "2026-05-12"
+                }
+                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.userId").value("UserId is required"));
+    }
 }
