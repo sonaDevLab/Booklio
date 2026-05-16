@@ -1,5 +1,6 @@
 package org.sonadev.booklio.controller;
 
+import jakarta.validation.Valid;
 import org.sonadev.booklio.dto.ReservationRequest;
 import org.sonadev.booklio.dto.ReservationResponse;
 import org.sonadev.booklio.service.ReservationService;
@@ -19,7 +20,7 @@ public class ReservationController {
     }
 
     @PostMapping
-    public ResponseEntity<ReservationResponse> create(@RequestBody ReservationRequest request) {
+    public ResponseEntity<ReservationResponse> create(@Valid @RequestBody ReservationRequest request) {
         return ResponseEntity.ok(reservationService.createReservation(request));
     }
 
