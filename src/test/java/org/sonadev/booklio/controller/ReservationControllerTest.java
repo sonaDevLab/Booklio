@@ -2,9 +2,12 @@ package org.sonadev.booklio.controller;
 
 import org.junit.jupiter.api.Test;
 import org.sonadev.booklio.dto.ReservationResponse;
+import org.sonadev.booklio.exception.GlobalExceptionHandler;
+import org.sonadev.booklio.exception.ReservationConflictException;
 import org.sonadev.booklio.service.ReservationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -15,6 +18,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(ReservationController.class)
+@Import(GlobalExceptionHandler.class)
 class ReservationControllerTest {
 
     @MockitoBean
@@ -44,8 +48,8 @@ class ReservationControllerTest {
                 {
                     "userId": 1,
                     "resourceId": 1,
-                    "startDate": "2026-05-10",
-                    "endDate": "2026-05-12"
+                    "startDate": "2026-05-20",
+                    "endDate": "2026-05-25"
                 }
                 """))
                 .andExpect(status().isOk())
@@ -59,7 +63,7 @@ class ReservationControllerTest {
     void shouldReturnBadRequestWhenServiceFails() throws Exception {
 
         when(reservationService.createReservation(any()))
-                .thenThrow(new RuntimeException("Resource not available"));
+                .thenThrow(new ReservationConflictException("Resource not available"));
 
         mockMvc.perform(post("/reservations")
                 .contentType("application/json")
@@ -67,11 +71,15 @@ class ReservationControllerTest {
                 {
                     "userId": 1,
                     "resourceId": 1,
-                    "startDate": "2026-05-10",
-                    "endDate": "2026-05-12"
+                    "startDate": "2026-05-20",
+                    "endDate": "2026-05-25"
                 }
                 """))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status")
+                        .value(409))
+                .andExpect(jsonPath("$.error")
+                        .value("Resource not available"));
     }
 
     @Test
@@ -82,11 +90,12 @@ class ReservationControllerTest {
                 {
                     "userId": null,
                     "resourceId": 1,
-                    "startDate": "2026-05-10",
-                    "endDate": "2026-05-12"
+                    "startDate": "2026-05-20",
+                    "endDate": "2026-05-25"
                 }
                 """))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.userId").value("UserId is required"));
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("UserId is required"));
     }
 }
