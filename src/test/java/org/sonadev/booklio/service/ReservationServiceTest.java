@@ -248,4 +248,24 @@ public class ReservationServiceTest {
         verify(reservationRepository).save(reservation);
     }
 
+    @Test
+    void shouldThrowExceptionWhenReservationIsCancelled(){
+        Reservation reservation = new Reservation();
+        reservation.setStatus(ReservationStatus.CANCELLED);
+
+        when(reservationRepository.findById(1L))
+                .thenReturn(Optional.of(reservation));
+
+        UpdateReservationRequest request = new UpdateReservationRequest();
+        request.setStartDate(LocalDate.now());
+        request.setEndDate(LocalDate.now().plusDays(2));
+
+        assertThrows(
+                InvalidReservationException.class,
+                () -> reservationService.updateReservation(1L, request)
+        );
+
+        verify(reservationRepository, never()).save(any());
+    }
+
 }
