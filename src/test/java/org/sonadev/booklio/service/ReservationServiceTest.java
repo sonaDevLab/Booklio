@@ -193,4 +193,20 @@ public class ReservationServiceTest {
         verify(reservationRepository).save(reservation);
     }
 
+    @Test
+    void shouldThrowExceptionWhenReservationAlreadyCancelled(){
+        Reservation reservation = new Reservation();
+        reservation.setStatus(ReservationStatus.CANCELLED);
+
+        when(reservationRepository.findById(1L))
+                .thenReturn(Optional.of(reservation));
+
+        assertThrows(
+                InvalidReservationException.class,
+                () -> reservationService.cancelReservation(1L)
+        );
+
+        verify(reservationRepository, never()).save(any());
+    }
+
 }
