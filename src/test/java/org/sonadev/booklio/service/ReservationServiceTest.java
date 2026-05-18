@@ -10,6 +10,7 @@ import org.sonadev.booklio.dto.ReservationResponse;
 import org.sonadev.booklio.exception.InvalidReservationException;
 import org.sonadev.booklio.exception.ReservationConflictException;
 import org.sonadev.booklio.model.Reservation;
+import org.sonadev.booklio.model.ReservationStatus;
 import org.sonadev.booklio.model.Resource;
 import org.sonadev.booklio.model.User;
 import org.sonadev.booklio.repository.ReservationRepository;
@@ -174,6 +175,22 @@ public class ReservationServiceTest {
         );
 
         assertEquals("Start date cannot be after end date", exception.getMessage());
+    }
+
+    @Test
+    void shouldCancelReservationSuccessfully(){
+        Reservation reservation = new Reservation();
+        reservation.setId(1L);
+        reservation.setStatus(ReservationStatus.CONFIRMED);
+
+        when(reservationRepository.findById(1L))
+                .thenReturn(Optional.of(reservation));
+
+        reservationService.cancelReservation(1L);
+
+        assertEquals(ReservationStatus.CANCELLED, reservation.getStatus());
+
+        verify(reservationRepository).save(reservation);
     }
 
 }
