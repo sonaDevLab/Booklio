@@ -3,6 +3,7 @@ package org.sonadev.booklio.controller;
 import jakarta.validation.Valid;
 import org.sonadev.booklio.dto.ReservationRequest;
 import org.sonadev.booklio.dto.ReservationResponse;
+import org.sonadev.booklio.dto.UpdateReservationRequest;
 import org.sonadev.booklio.service.ReservationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -39,6 +40,17 @@ public class ReservationController {
     public ResponseEntity<ReservationResponse> cancelReservation(@PathVariable Long id) {
         reservationService.cancelReservation(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // Modify reservation
+    @PutMapping("/{id}")
+    public ResponseEntity<ReservationResponse> updateReservation(
+            @PathVariable Long id,
+            @RequestBody UpdateReservationRequest request
+    ){
+        return ResponseEntity.ok(
+                reservationService.updateReservation(id, request)
+        );
     }
 
 }

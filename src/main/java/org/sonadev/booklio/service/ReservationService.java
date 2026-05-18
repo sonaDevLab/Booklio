@@ -2,6 +2,7 @@ package org.sonadev.booklio.service;
 
 import org.sonadev.booklio.dto.ReservationRequest;
 import org.sonadev.booklio.dto.ReservationResponse;
+import org.sonadev.booklio.dto.UpdateReservationRequest;
 import org.sonadev.booklio.exception.InvalidReservationException;
 import org.sonadev.booklio.exception.ReservationConflictException;
 import org.sonadev.booklio.exception.ResourceNotFoundException;
@@ -15,6 +16,7 @@ import org.sonadev.booklio.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 public class ReservationService {
@@ -96,5 +98,49 @@ public class ReservationService {
         reservation.setStatus(ReservationStatus.CANCELLED);
 
         reservationRepository.save(reservation);
+    }
+
+    //Update Reservation
+    public ReservationResponse updateReservation(Long reservationId, UpdateReservationRequest request){
+        Reservation reservation = reservationRepository
+                .findById(reservationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reservation not found"));
+
+        if(reservation.getStatus() == ReservationStatus.CANCELLED){
+            throw new InvalidReservationException("Cannot modify a cancelled reservation");
+        }
+
+        if(request.getStartDate().isAfter(reservation.getEndDate())){
+            throw new InvalidReservationException("Start date cannot be after end date");
+        }
+
+        // Check conflicts
+        List<Reservation> conflicts = reservationRepository.findConflicts(
+                reservation.getResource().getId(),
+                request.getStartDate(),
+                request.getEndDate()
+        ).stream()
+            .filter(r -> !r.getId().equals(reservationId))
+            .toList();
+
+        if(!conflicts.isEmpty()){
+            throw new ReservationConflictException("Resource not available for new dates");
+        }
+
+        // update
+        reservation.setStartDate(request.getStartDate());
+        reservation.setEndDate(request.getEndDate());
+
+        Reservation updated = reservationRepository.save(reservation);
+
+        ReservationResponse response = new ReservationResponse();
+        response.setId(updated.getId());
+        response.setUserId(updated.getUser().getId());
+        response.setResourceId(updated.getResource().getId());
+        response.setStatus(updated.getStatus());
+        response.setStartDate(updated.getStartDate());
+        response.setEndDate(updated.getEndDate());
+
+        return response;
     }
 }
