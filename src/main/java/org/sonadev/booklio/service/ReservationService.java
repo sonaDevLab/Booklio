@@ -81,4 +81,20 @@ public class ReservationService {
 
         return response;
     }
+
+    //Cancel Reservation
+    public void cancelReservation(Long reservationId){
+        Reservation reservation = reservationRepository
+                .findById(reservationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reservation not found"));
+
+        // NO Double Cancellation
+        if(reservation.getStatus() == ReservationStatus.CANCELLED){
+            throw new InvalidReservationException("Reservation is already cancelled");
+        }
+
+        reservation.setStatus(ReservationStatus.CANCELLED);
+
+        reservationRepository.save(reservation);
+    }
 }

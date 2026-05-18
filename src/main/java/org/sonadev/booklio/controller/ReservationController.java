@@ -34,4 +34,11 @@ public class ReservationController {
         return reservationService.isAvailable(resourceId, startDate, endDate);
     }
 
+    // Cancel reservation
+    @PatchMapping
+    public ResponseEntity<ReservationResponse> cancelReservation(@PathVariable Long id) {
+        reservationService.cancelReservation(id);
+        return ResponseEntity.noContent().build();
+    }
+
 }
