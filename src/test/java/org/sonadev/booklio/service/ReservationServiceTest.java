@@ -7,6 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.sonadev.booklio.dto.ReservationRequest;
 import org.sonadev.booklio.dto.ReservationResponse;
+import org.sonadev.booklio.dto.UpdateReservationRequest;
 import org.sonadev.booklio.exception.InvalidReservationException;
 import org.sonadev.booklio.exception.ReservationConflictException;
 import org.sonadev.booklio.model.Reservation;
@@ -207,6 +208,44 @@ public class ReservationServiceTest {
         );
 
         verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldUpdateReservationSuccessfully(){
+        Reservation reservation = new Reservation();
+        reservation.setId(1L);
+        reservation.setStatus(ReservationStatus.CONFIRMED);
+
+        User user = new User();
+        user.setId(1L);
+
+        Resource resource = new Resource();
+        resource.setId(1L);
+
+        reservation.setUser(user);
+        reservation.setResource(resource);
+
+        UpdateReservationRequest request = new UpdateReservationRequest();
+        request.setStartDate(LocalDate.now().plusDays(1));
+        request.setEndDate(LocalDate.now().plusDays(3));
+
+        when(reservationRepository.findById(1L))
+                .thenReturn(Optional.of(reservation));
+
+        when(reservationRepository.findConflicts(
+                anyLong(),
+                any(LocalDate.class),
+                any(LocalDate.class)
+        )).thenReturn(Collections.emptyList());
+
+        when(reservationRepository.save(any()))
+                .thenReturn(reservation);
+
+        ReservationResponse result = reservationService.updateReservation(1L, request);
+
+        assertNotNull(result);
+
+        verify(reservationRepository).save(reservation);
     }
 
 }
