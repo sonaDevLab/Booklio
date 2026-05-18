@@ -12,6 +12,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     @Query("""
         SELECT r FROM Reservation r
         WHERE r.resource.id = :resourceId
+        AND r.status = 'CONFIRMED'
         AND r.startDate < :endDate
         AND r.endDate > :startDate
     """)

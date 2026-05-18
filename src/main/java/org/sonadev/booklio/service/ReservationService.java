@@ -6,6 +6,7 @@ import org.sonadev.booklio.exception.InvalidReservationException;
 import org.sonadev.booklio.exception.ReservationConflictException;
 import org.sonadev.booklio.exception.ResourceNotFoundException;
 import org.sonadev.booklio.model.Reservation;
+import org.sonadev.booklio.model.ReservationStatus;
 import org.sonadev.booklio.model.Resource;
 import org.sonadev.booklio.model.User;
 import org.sonadev.booklio.repository.ReservationRepository;
@@ -33,22 +34,22 @@ public class ReservationService {
         return reservationRepository.findConflicts(resourceId, startDate, endDate).isEmpty();
     }
 
-    //Crear reserva
+    //Create Reservation
     public ReservationResponse createReservation(ReservationRequest dto){
 
-        // Validar fechas
+        // Dates Validation
         if(dto.getStartDate().isAfter(dto.getEndDate())){
             throw new InvalidReservationException("Start date cannot be after end date");
         }
 
-        // Buscar user y resource
+        // Search for user and resource
         User user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Resource resource = resourceRepository.findById(dto.getResourceId())
                 .orElseThrow(() -> new ResourceNotFoundException("Resource not found"));
 
-        // Comprobar disponibilidad
+        // Check availability
         boolean available = isAvailable(
                 dto.getResourceId(),
                 dto.getStartDate(),
@@ -59,20 +60,22 @@ public class ReservationService {
             throw new ReservationConflictException("Resource already booked");
         }
 
-        // Crear reserva
+        // Create reservation
         Reservation reservation = new Reservation();
         reservation.setUser(user);
         reservation.setResource(resource);
+        reservation.setStatus(ReservationStatus.CONFIRMED);
         reservation.setStartDate(dto.getStartDate());
         reservation.setEndDate(dto.getEndDate());
 
         Reservation saved = reservationRepository.save(reservation);
 
-        // Mapear a response
+        // Map response
         ReservationResponse response = new ReservationResponse();
         response.setId(saved.getId());
         response.setUserId(user.getId());
         response.setResourceId(resource.getId());
+        response.setStatus(ReservationStatus.CONFIRMED);
         response.setStartDate(saved.getStartDate());
         response.setEndDate(saved.getEndDate());
 
