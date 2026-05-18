@@ -110,7 +110,7 @@ public class ReservationService {
             throw new InvalidReservationException("Cannot modify a cancelled reservation");
         }
 
-        if(request.getStartDate().isAfter(reservation.getEndDate())){
+        if(request.getStartDate().isAfter(request.getEndDate())){
             throw new InvalidReservationException("Start date cannot be after end date");
         }
 
