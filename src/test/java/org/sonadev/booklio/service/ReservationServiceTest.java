@@ -42,6 +42,7 @@ public class ReservationServiceTest {
     @InjectMocks
     private ReservationService reservationService;
 
+    /* CREATE */
     @Test
     void shouldReturnTrueWhenNoConflictsExist(){
         when(reservationRepository.findConflicts(
@@ -178,6 +179,56 @@ public class ReservationServiceTest {
         assertEquals("Start date cannot be after end date", exception.getMessage());
     }
 
+    /* GET */
+    @Test
+    void shouldReturnReservationsByUser() {
+        Reservation reservation = new Reservation();
+        reservation.setId(1L);
+
+        when(reservationRepository.findByUserId(1L))
+                .thenReturn(List.of(reservation));
+
+        var result = reservationService.getByUser(1L);
+
+        assertEquals(1, result.size());
+
+        verify(reservationRepository).findByUserId(1L);
+    }
+
+    @Test
+    void shouldReturnReservationsByResource() {
+        Reservation reservation = new Reservation();
+        reservation.setId(1L);
+
+        when(reservationRepository.findByResourceId(1L))
+                .thenReturn(List.of(reservation));
+
+        var result = reservationService.getByResource(1L);
+
+        assertEquals(1, result.size());
+
+        verify(reservationRepository).findByResourceId(1L);
+    }
+
+    @Test
+    void shouldReturnReservationsByDateRange() {
+        Reservation reservation = new Reservation();
+        reservation.setId(1L);
+
+        LocalDate startDate = LocalDate.of(2026, 6, 1);
+        LocalDate endDate = LocalDate.of(2026, 6, 10);
+
+        when(reservationRepository.findByDateRange(startDate, endDate))
+                .thenReturn(List.of(reservation));
+
+        var result = reservationService.getByDateRange(startDate, endDate);
+
+        assertEquals(1, result.size());
+
+        verify(reservationRepository).findByDateRange(startDate, endDate);
+    }
+
+    /* CANCEL */
     @Test
     void shouldCancelReservationSuccessfully(){
         Reservation reservation = new Reservation();
@@ -210,6 +261,7 @@ public class ReservationServiceTest {
         verify(reservationRepository, never()).save(any());
     }
 
+    /* UPDATE */
     @Test
     void shouldUpdateReservationSuccessfully(){
         Reservation reservation = new Reservation();
