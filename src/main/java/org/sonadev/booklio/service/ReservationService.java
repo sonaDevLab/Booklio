@@ -40,6 +40,7 @@ public class ReservationService {
     private ReservationResponse mapToDTO(Reservation reservation) {
         ReservationResponse dto = new ReservationResponse();
         dto.setId(reservation.getId());
+        dto.setStatus(reservation.getStatus());
         dto.setStartDate(reservation.getStartDate());
         dto.setEndDate(reservation.getEndDate());
 
@@ -90,16 +91,7 @@ public class ReservationService {
 
         Reservation saved = reservationRepository.save(reservation);
 
-        // Map response
-        ReservationResponse response = new ReservationResponse();
-        response.setId(saved.getId());
-        response.setUserId(user.getId());
-        response.setResourceId(resource.getId());
-        response.setStatus(ReservationStatus.CONFIRMED);
-        response.setStartDate(saved.getStartDate());
-        response.setEndDate(saved.getEndDate());
-
-        return response;
+        return mapToDTO(saved);
     }
 
     //Get Reservation (userID)
@@ -175,14 +167,6 @@ public class ReservationService {
 
         Reservation updated = reservationRepository.save(reservation);
 
-        ReservationResponse response = new ReservationResponse();
-        response.setId(updated.getId());
-        response.setUserId(updated.getUser().getId());
-        response.setResourceId(updated.getResource().getId());
-        response.setStatus(updated.getStatus());
-        response.setStartDate(updated.getStartDate());
-        response.setEndDate(updated.getEndDate());
-
-        return response;
+        return mapToDTO(updated);
     }
 }
