@@ -3,7 +3,9 @@ package org.sonadev.booklio.controller;
 import org.junit.jupiter.api.Test;
 import org.sonadev.booklio.dto.ReservationResponse;
 import org.sonadev.booklio.exception.GlobalExceptionHandler;
+import org.sonadev.booklio.exception.InvalidReservationException;
 import org.sonadev.booklio.exception.ReservationConflictException;
+import org.sonadev.booklio.exception.ResourceNotFoundException;
 import org.sonadev.booklio.service.ReservationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -27,6 +29,7 @@ class ReservationControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    /* CREATE  */
     @Test
     void shouldCreateReservation() throws Exception {
 
@@ -98,4 +101,118 @@ class ReservationControllerTest {
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.error").value("UserId is required"));
     }
+
+    /* CANCEL */
+    @Test
+    void shouldCancelReservation() throws Exception {
+        doNothing().when(reservationService).cancelReservation(1L);
+
+        mockMvc.perform(patch("/reservations/1/cancel"))
+                .andExpect(status().isNoContent());
+
+        verify(reservationService).cancelReservation(1L);
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenCancellingNonExistingReservation() throws Exception {
+        doThrow(new ResourceNotFoundException("Reservation not found"))
+                .when(reservationService).cancelReservation(1L);
+
+        mockMvc.perform(patch("/reservations/1/cancel"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Reservation not found"));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenReservationAlreadyCancelled() throws Exception {
+        doThrow(new InvalidReservationException("Reservation is already cancelled"))
+                .when(reservationService).cancelReservation(1L);
+
+        mockMvc.perform(patch("/reservations/1/cancel"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Reservation is already cancelled"));
+    }
+
+    /* UPDATE  */
+    @Test
+    void shouldUpdateReservation() throws Exception {
+        ReservationResponse response = new ReservationResponse();
+        response.setId(1L);
+        response.setUserId(1L);
+        response.setResourceId(1L);
+        response.setStartDate(LocalDate.of(2026, 6, 1));
+        response.setEndDate(LocalDate.of(2026, 6, 5));
+
+        when(reservationService.updateReservation(anyLong(), any()))
+                .thenReturn(response);
+
+        mockMvc.perform(put("/reservations/1")
+                .contentType("application/json")
+                .content("""
+                {
+                    "startDate": "2026-06-01",
+                    "endDate": "2026-06-05"
+                }
+                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.startDate").value("2026-06-01"))
+                .andExpect(jsonPath("$.endDate").value("2026-06-05"));
+    }
+
+    @Test
+    void shouldReturnConflictWhenUpdatingReservation() throws Exception {
+        when(reservationService.updateReservation(anyLong(), any()))
+                .thenThrow(new ReservationConflictException("Conflict"));
+
+        mockMvc.perform(put("/reservations/1")
+                .contentType("application/json")
+                .content("""
+                {
+                    "startDate": "2026-06-01",
+                    "endDate": "2026-06-05"
+                }
+                """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").value("Conflict"));
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenUpdatingNonExistingReservation() throws Exception {
+        when(reservationService.updateReservation(anyLong(), any()))
+                .thenThrow(new ResourceNotFoundException("Reservation not found"));
+
+        mockMvc.perform(put("/reservations/1")
+                .contentType("application/json")
+                .content("""
+                {
+                    "startDate": "2026-06-01",
+                    "endDate": "2026-06-05"
+                }
+                """))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Reservation not found"));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenUpdatingCancelledReservation() throws Exception {
+        when(reservationService.updateReservation(anyLong(), any()))
+                .thenThrow(new InvalidReservationException("Cannot modify a cancelled reservation"));
+
+        mockMvc.perform(put("/reservations/1")
+                .contentType("application/json")
+                .content("""
+                {
+                    "startDate": "2026-06-01",
+                    "endDate": "2026-06-05"
+                }
+                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Cannot modify a cancelled reservation"));
+    }
+
 }
