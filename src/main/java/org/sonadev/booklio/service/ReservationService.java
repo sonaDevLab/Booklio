@@ -36,6 +36,24 @@ public class ReservationService {
         return reservationRepository.findConflicts(resourceId, startDate, endDate).isEmpty();
     }
 
+    //Map to DTO
+    private ReservationResponse mapToDTO(Reservation reservation) {
+        ReservationResponse dto = new ReservationResponse();
+        dto.setId(reservation.getId());
+        dto.setStartDate(reservation.getStartDate());
+        dto.setEndDate(reservation.getEndDate());
+
+        if(reservation.getUser() != null) {
+            dto.setUserId(reservation.getUser().getId());
+        }
+
+        if(reservation.getResource() != null) {
+            dto.setResourceId(reservation.getResource().getId());
+        }
+
+        return dto;
+    }
+
     //Create Reservation
     public ReservationResponse createReservation(ReservationRequest dto){
 
@@ -82,6 +100,30 @@ public class ReservationService {
         response.setEndDate(saved.getEndDate());
 
         return response;
+    }
+
+    //Get Reservation (userID)
+    public List<ReservationResponse> getByUser(Long userId) {
+        return reservationRepository.findByUserId(userId)
+                .stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
+    //Get Reservation (resourceID)
+    public List<ReservationResponse> getByResource(Long resourceId) {
+        return reservationRepository.findByResourceId(resourceId)
+                .stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
+    //Get Reservation (Date range)
+    public List<ReservationResponse> getByDateRange(LocalDate startDate, LocalDate endDate) {
+        return reservationRepository.findByDateRange(startDate, endDate)
+                .stream()
+                .map(this::mapToDTO)
+                .toList();
     }
 
     //Cancel Reservation
