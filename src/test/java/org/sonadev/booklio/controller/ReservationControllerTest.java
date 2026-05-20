@@ -30,7 +30,7 @@ class ReservationControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    /* CREATE  */
+    /* CREATE */
     @Test
     void shouldCreateReservation() throws Exception {
 
@@ -103,7 +103,7 @@ class ReservationControllerTest {
                 .andExpect(jsonPath("$.error").value("UserId is required"));
     }
 
-    /* CREATE */
+    /* GET */
 
     //by user
     @Test
