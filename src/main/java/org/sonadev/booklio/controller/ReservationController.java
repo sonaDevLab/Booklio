@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/reservations")
@@ -20,11 +21,6 @@ public class ReservationController {
         this.reservationService = reservationService;
     }
 
-    @PostMapping
-    public ResponseEntity<ReservationResponse> create(@Valid @RequestBody ReservationRequest request) {
-        return ResponseEntity.ok(reservationService.createReservation(request));
-    }
-
     // Check AVAILABILITY
     @GetMapping
     public boolean checkAvailability(
@@ -33,6 +29,32 @@ public class ReservationController {
             @RequestParam LocalDate endDate
     ){
         return reservationService.isAvailable(resourceId, startDate, endDate);
+    }
+
+    // Create reservation
+    @PostMapping
+    public ResponseEntity<ReservationResponse> create(@Valid @RequestBody ReservationRequest request) {
+        return ResponseEntity.ok(reservationService.createReservation(request));
+    }
+
+    // Get reservation
+
+    //by userId
+    @GetMapping
+    public ResponseEntity<List<ReservationResponse>> getByUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(reservationService.getByUser(userId));
+    }
+
+    //by resourceId
+    @GetMapping
+    public ResponseEntity<List<ReservationResponse>> getByResource(@PathVariable Long resourceId) {
+        return ResponseEntity.ok(reservationService.getByResource(resourceId));
+    }
+
+    //by date range
+    @GetMapping
+    public ResponseEntity<List<ReservationResponse>> getByDateRange(@RequestParam LocalDate startDate, @RequestParam LocalDate endDate) {
+        return ResponseEntity.ok(reservationService.getByDateRange(startDate, endDate));
     }
 
     // Cancel reservation
