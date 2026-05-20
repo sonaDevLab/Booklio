@@ -63,7 +63,7 @@ class ReservationControllerTest {
     }
 
     @Test
-    void shouldReturnBadRequestWhenServiceFails() throws Exception {
+    void shouldReturnConflictWhenServiceFails() throws Exception {
 
         when(reservationService.createReservation(any()))
                 .thenThrow(new ReservationConflictException("Resource not available"));
