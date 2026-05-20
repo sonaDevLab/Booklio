@@ -14,6 +14,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -100,6 +101,55 @@ class ReservationControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.error").value("UserId is required"));
+    }
+
+    /* CREATE */
+
+    //by user
+    @Test
+    void shouldGetReservationByUser() throws Exception {
+        ReservationResponse response = new ReservationResponse();
+        response.setId(1L);
+        response.setUserId(1L);
+
+        when(reservationService.getByUser(1L))
+                .thenReturn(List.of(response));
+
+        mockMvc.perform(get("/reservations/user/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].userId").value(1));
+    }
+
+    //by resource
+    @Test
+    void shouldGetReservationByResource() throws Exception {
+        ReservationResponse response = new ReservationResponse();
+        response.setId(1L);
+        response.setResourceId(1L);
+
+        when(reservationService.getByResource(1L))
+                .thenReturn(List.of(response));
+
+        mockMvc.perform(get("/reservations/resource/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].resourceId").value(1));
+    }
+
+    //by date range
+    @Test
+    void shouldGetReservationByDateRange() throws Exception {
+        ReservationResponse response = new ReservationResponse();
+        response.setId(1L);
+
+        when(reservationService.getByDateRange(any(), any()))
+                .thenReturn(List.of(response));
+
+        mockMvc.perform(get("/reservations/by-date-range")
+                .param("startDate", "2026-06-01")
+                .param("endDate", "2026-06-10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1));
     }
 
     /* CANCEL */
