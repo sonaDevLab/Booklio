@@ -22,7 +22,7 @@ public class ReservationController {
     }
 
     // Check AVAILABILITY
-    @GetMapping
+    @GetMapping("/availability")
     public boolean checkAvailability(
             @RequestParam Long resourceId,
             @RequestParam LocalDate startDate,
@@ -40,19 +40,19 @@ public class ReservationController {
     // Get reservation
 
     //by userId
-    @GetMapping
+    @GetMapping("/user/{userId}")
     public ResponseEntity<List<ReservationResponse>> getByUser(@PathVariable Long userId) {
         return ResponseEntity.ok(reservationService.getByUser(userId));
     }
 
     //by resourceId
-    @GetMapping
+    @GetMapping("/resource/{resourceId}")
     public ResponseEntity<List<ReservationResponse>> getByResource(@PathVariable Long resourceId) {
         return ResponseEntity.ok(reservationService.getByResource(resourceId));
     }
 
     //by date range
-    @GetMapping
+    @GetMapping("/by-date-range")
     public ResponseEntity<List<ReservationResponse>> getByDateRange(@RequestParam LocalDate startDate, @RequestParam LocalDate endDate) {
         return ResponseEntity.ok(reservationService.getByDateRange(startDate, endDate));
     }
