@@ -37,7 +37,19 @@ public class ReservationController {
         return ResponseEntity.ok(reservationService.createReservation(request));
     }
 
-    // Get reservation
+    // Get reservations
+
+    // All reservations
+    @GetMapping()
+    public ResponseEntity<List<ReservationResponse>> getAllReservations(){
+        return ResponseEntity.ok(reservationService.getAllReservations());
+    }
+
+    //by reservationId
+    @GetMapping("/{reservationId}")
+    public ResponseEntity<ReservationResponse> getReservationById(@PathVariable Long reservationId){
+        return ResponseEntity.ok(reservationService.getReservationById(reservationId));
+    }
 
     //by userId
     @GetMapping("/user/{userId}")
