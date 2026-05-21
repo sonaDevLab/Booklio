@@ -94,6 +94,22 @@ public class ReservationService {
         return mapToDTO(saved);
     }
 
+    //Get All Reservations
+    public List<ReservationResponse> getAllReservations(){
+        return reservationRepository.findAll()
+                .stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
+    //Get Reservation (reservationId)
+    public ReservationResponse getReservationById(Long reservationId){
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reservation not found"));
+
+        return mapToDTO(reservation);
+    }
+
     //Get Reservation (userID)
     public List<ReservationResponse> getByUser(Long userId) {
         return reservationRepository.findByUserId(userId)
