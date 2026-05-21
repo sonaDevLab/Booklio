@@ -105,6 +105,45 @@ class ReservationControllerTest {
 
     /* GET */
 
+    //get All
+    @Test
+    void shouldGetAllReservations() throws Exception {
+        ReservationResponse response = new ReservationResponse();
+        response.setId(1L);
+
+        when(reservationService.getAllReservations())
+                .thenReturn(List.of(response));
+
+        mockMvc.perform(get("/reservations"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1));
+    }
+
+    //by reservationId
+    @Test
+    void shouldGetReservationById() throws Exception {
+        ReservationResponse response = new ReservationResponse();
+        response.setId(1L);
+
+        when(reservationService.getReservationById(1L))
+                .thenReturn(response);
+
+        mockMvc.perform(get("/reservations/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1));
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenReservationDoesNotExist() throws Exception {
+        when(reservationService.getReservationById(1L))
+                .thenThrow(new ResourceNotFoundException("Reservation not found"));
+
+        mockMvc.perform(get("/reservations/1"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Reservation not found"));
+    }
+
     //by user
     @Test
     void shouldGetReservationByUser() throws Exception {
