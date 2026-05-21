@@ -10,6 +10,7 @@ import org.sonadev.booklio.dto.ReservationResponse;
 import org.sonadev.booklio.dto.UpdateReservationRequest;
 import org.sonadev.booklio.exception.InvalidReservationException;
 import org.sonadev.booklio.exception.ReservationConflictException;
+import org.sonadev.booklio.exception.ResourceNotFoundException;
 import org.sonadev.booklio.model.Reservation;
 import org.sonadev.booklio.model.ReservationStatus;
 import org.sonadev.booklio.model.Resource;
@@ -180,6 +181,64 @@ public class ReservationServiceTest {
     }
 
     /* GET */
+    @Test
+    void shouldReturnAllReservationsSuccessfully() {
+        Reservation reservation = new Reservation();
+        reservation.setId(1L);
+
+        when(reservationRepository.findAll())
+                .thenReturn(List.of(reservation));
+
+        var result = reservationService.getAllReservations();
+
+        assertEquals(1, result.size());
+        assertEquals(1, result.get(0).getId());
+
+        verify(reservationRepository).findAll();
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenNoReservationsExist() {
+        when(reservationRepository.findAll())
+                .thenReturn(Collections.emptyList());
+
+        var result = reservationService.getAllReservations();
+
+        assertTrue(result.isEmpty());
+
+        verify(reservationRepository).findAll();
+    }
+
+    @Test
+    void shouldReturnReservationById() {
+        Reservation reservation = new Reservation();
+        reservation.setId(1L);
+
+        when(reservationRepository.findById(1L))
+                .thenReturn(Optional.of(reservation));
+
+        var result = reservationService.getReservationById(1L);
+
+        assertEquals(1L, result.getId());
+
+         verify(reservationRepository).findById(1L);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenReservationNotFound() {
+        when(reservationRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
+                () -> reservationService.getReservationById(1L)
+        );
+
+        assertEquals("Reservation not found", exception.getMessage());
+
+        verify(reservationRepository).findById(1L);
+    }
+
     @Test
     void shouldReturnReservationsByUser() {
         Reservation reservation = new Reservation();
