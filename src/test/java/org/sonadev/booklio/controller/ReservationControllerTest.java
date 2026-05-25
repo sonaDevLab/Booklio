@@ -10,6 +10,9 @@ import org.sonadev.booklio.service.ReservationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -107,16 +110,20 @@ class ReservationControllerTest {
 
     //get All
     @Test
-    void shouldGetAllReservations() throws Exception {
+    void shouldGetPaginatedReservations() throws Exception {
         ReservationResponse response = new ReservationResponse();
         response.setId(1L);
 
-        when(reservationService.getAllReservations())
-                .thenReturn(List.of(response));
+        Page<ReservationResponse> page = new PageImpl<>(List.of(response));
 
-        mockMvc.perform(get("/reservations"))
+        when(reservationService.getAllReservations(any(Pageable.class)))
+                .thenReturn(page);
+
+        mockMvc.perform(get("/reservations")
+                        .param("page", "0")
+                        .param("size", "5"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1));
+                .andExpect(jsonPath("$.content[0].id").value(1));
     }
 
     //by reservationId

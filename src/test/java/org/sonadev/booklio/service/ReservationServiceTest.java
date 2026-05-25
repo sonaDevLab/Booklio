@@ -18,6 +18,10 @@ import org.sonadev.booklio.model.User;
 import org.sonadev.booklio.repository.ReservationRepository;
 import org.sonadev.booklio.repository.ResourceRepository;
 import org.sonadev.booklio.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.Collections;
@@ -182,31 +186,40 @@ public class ReservationServiceTest {
 
     /* GET */
     @Test
-    void shouldReturnAllReservationsSuccessfully() {
+    void shouldReturnPaginatedReservations() {
         Reservation reservation = new Reservation();
         reservation.setId(1L);
 
-        when(reservationRepository.findAll())
-                .thenReturn(List.of(reservation));
+        Pageable pageable = PageRequest.of(0, 5);
 
-        var result = reservationService.getAllReservations();
+        Page<Reservation> reservationPage = new PageImpl<>(List.of(reservation));
 
-        assertEquals(1, result.size());
-        assertEquals(1, result.get(0).getId());
+        when(reservationRepository.findAll(pageable))
+                .thenReturn(reservationPage);
 
-        verify(reservationRepository).findAll();
+        Page<ReservationResponse> result = reservationService.getAllReservations(pageable);
+
+        assertEquals(1, result.getContent().size());
+        assertEquals(1, result.getContent().get(0).getId());
+
+        verify(reservationRepository).findAll(pageable);
     }
 
     @Test
-    void shouldReturnEmptyListWhenNoReservationsExist() {
-        when(reservationRepository.findAll())
-                .thenReturn(Collections.emptyList());
+    void shouldReturnEmptyPageWhenNoReservationsExist() {
+        Pageable pageable = PageRequest.of(0, 5);
 
-        var result = reservationService.getAllReservations();
+        Page<Reservation> emptyPage = new PageImpl<>(Collections.emptyList());
+
+        when(reservationRepository.findAll(pageable))
+                .thenReturn(emptyPage);
+
+        Page<ReservationResponse> result = reservationService.getAllReservations(pageable);
 
         assertTrue(result.isEmpty());
+        assertEquals(0, result.getTotalElements());
 
-        verify(reservationRepository).findAll();
+        verify(reservationRepository).findAll(pageable);
     }
 
     @Test
