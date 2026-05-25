@@ -5,6 +5,8 @@ import org.sonadev.booklio.dto.ReservationRequest;
 import org.sonadev.booklio.dto.ReservationResponse;
 import org.sonadev.booklio.dto.UpdateReservationRequest;
 import org.sonadev.booklio.service.ReservationService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,8 +43,8 @@ public class ReservationController {
 
     // All reservations
     @GetMapping()
-    public ResponseEntity<List<ReservationResponse>> getAllReservations(){
-        return ResponseEntity.ok(reservationService.getAllReservations());
+    public ResponseEntity<Page<ReservationResponse>> getAllReservations(Pageable pageable){
+        return ResponseEntity.ok(reservationService.getAllReservations(pageable));
     }
 
     //by reservationId

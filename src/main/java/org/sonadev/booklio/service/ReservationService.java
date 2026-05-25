@@ -13,6 +13,8 @@ import org.sonadev.booklio.model.User;
 import org.sonadev.booklio.repository.ReservationRepository;
 import org.sonadev.booklio.repository.ResourceRepository;
 import org.sonadev.booklio.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -95,11 +97,9 @@ public class ReservationService {
     }
 
     //Get All Reservations
-    public List<ReservationResponse> getAllReservations(){
-        return reservationRepository.findAll()
-                .stream()
-                .map(this::mapToDTO)
-                .toList();
+    public Page<ReservationResponse> getAllReservations(Pageable pageable) {
+        return reservationRepository.findAll(pageable)
+                .map(this::mapToDTO);
     }
 
     //Get Reservation (reservationId)
