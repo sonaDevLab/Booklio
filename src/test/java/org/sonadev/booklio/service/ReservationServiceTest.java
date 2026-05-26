@@ -18,10 +18,7 @@ import org.sonadev.booklio.model.User;
 import org.sonadev.booklio.repository.ReservationRepository;
 import org.sonadev.booklio.repository.ResourceRepository;
 import org.sonadev.booklio.repository.UserRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 
 import java.time.LocalDate;
 import java.util.Collections;
@@ -201,6 +198,29 @@ public class ReservationServiceTest {
 
         assertEquals(1, result.getContent().size());
         assertEquals(1, result.getContent().get(0).getId());
+
+        verify(reservationRepository).findAll(pageable);
+    }
+
+    @Test
+    void shouldReturnSortedReservations() {
+        Reservation reservation = new Reservation();
+        reservation.setId(1L);
+
+        Pageable pageable = PageRequest.of(
+                0,
+                5,
+                Sort.by("startDate").descending()
+        );
+
+        Page<Reservation> page = new PageImpl<>(List.of(reservation));
+
+        when(reservationRepository.findAll(pageable))
+                .thenReturn(page);
+
+        Page<ReservationResponse> result = reservationService.getAllReservations(pageable);
+
+        assertEquals(1, result.getContent().size());
 
         verify(reservationRepository).findAll(pageable);
     }

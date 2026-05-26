@@ -126,6 +126,24 @@ class ReservationControllerTest {
                 .andExpect(jsonPath("$.content[0].id").value(1));
     }
 
+    @Test
+    void shouldGetSortedReservations() throws Exception {
+        ReservationResponse response = new ReservationResponse();
+        response.setId(1L);
+
+        Page<ReservationResponse> page = new PageImpl<>(List.of(response));
+
+        when(reservationService.getAllReservations(any(Pageable.class)))
+                .thenReturn(page);
+
+        mockMvc.perform(get("/reservations")
+                        .param("page", "0")
+                        .param("size", "5")
+                        .param("sort", "startDate,desc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value(1));
+    }
+
     //by reservationId
     @Test
     void shouldGetReservationById() throws Exception {
