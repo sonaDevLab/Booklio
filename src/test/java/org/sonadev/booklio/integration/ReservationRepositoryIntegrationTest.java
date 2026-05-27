@@ -1,9 +1,12 @@
-package org.sonadev.booklio.repository;
+package org.sonadev.booklio.integration;
 
 import org.junit.jupiter.api.Test;
 import org.sonadev.booklio.model.Reservation;
 import org.sonadev.booklio.model.Resource;
 import org.sonadev.booklio.model.User;
+import org.sonadev.booklio.repository.ReservationRepository;
+import org.sonadev.booklio.repository.ResourceRepository;
+import org.sonadev.booklio.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
