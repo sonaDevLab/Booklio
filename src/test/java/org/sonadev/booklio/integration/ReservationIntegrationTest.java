@@ -120,5 +120,37 @@ class ReservationIntegrationTest {
         );
     }
 
+    /* UPDATE  */
+    @Test
+    void shouldUpdateReservationDatesInDatabase() throws Exception {
+        Reservation reservation = reservationRepository.findAll().get(0);
+
+        Long id = reservation.getId();
+
+        mockMvc.perform(put("/reservations/" + id)
+                .contentType("application/json")
+                .content("""
+                {
+                    "startDate": "2026-07-01",
+                    "endDate": "2026-07-10"
+                }
+                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id))
+                .andExpect(jsonPath("$.startDate").value("2026-07-01"))
+                .andExpect(jsonPath("$.endDate").value("2026-07-10"));
+
+        Reservation updated = reservationRepository.findById(id).orElseThrow();
+
+        assertEquals(
+                LocalDate.of(2026, 7, 1),
+                updated.getStartDate()
+        );
+
+        assertEquals(
+                LocalDate.of(2026, 7, 10),
+                updated.getEndDate()
+        );
+    }
 
 }
