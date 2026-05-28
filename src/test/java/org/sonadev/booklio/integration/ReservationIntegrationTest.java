@@ -3,6 +3,7 @@ package org.sonadev.booklio.integration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonadev.booklio.model.Reservation;
+import org.sonadev.booklio.model.ReservationStatus;
 import org.sonadev.booklio.model.Resource;
 import org.sonadev.booklio.model.User;
 import org.sonadev.booklio.repository.ReservationRepository;
@@ -14,6 +15,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -43,14 +45,24 @@ class ReservationIntegrationTest {
         User user = new User();
         user.setName("Sona");
         user.setEmail("sona@test.com");
-        userRepository.save(user);
+        user = userRepository.save(user);
 
         Resource resource = new Resource();
         resource.setName("Room A");
         resource.setType("Room");
-        resourceRepository.save(resource);
+        resource = resourceRepository.save(resource);
+
+        Reservation reservation = new Reservation();
+        reservation.setUser(user);
+        reservation.setResource(resource);
+        reservation.setStartDate(LocalDate.of(2026, 6, 15));
+        reservation.setEndDate(LocalDate.of(2026, 6, 20));
+        reservation.setStatus(ReservationStatus.CONFIRMED);
+
+        reservationRepository.save(reservation);
     }
 
+    /* CREATE */
     @Test
     void shouldCreateReservationInDatabase() throws Exception {
         mockMvc.perform(post("/reservations")
@@ -89,5 +101,24 @@ class ReservationIntegrationTest {
 
         assertEquals(1, reservations.size());
     }
+
+    /* CANCEL */
+    @Test
+    void shouldCancelReservationAndUpdateStatusInDatabase() throws Exception {
+        Reservation reservation = reservationRepository.findAll().get(0);
+
+        Long id = reservation.getId();
+
+        mockMvc.perform(patch("/reservations/" + id + "/cancel"))
+                .andExpect(status().isNoContent());
+
+        Reservation updated = reservationRepository.findById(id).orElseThrow();
+
+        assertEquals(
+                ReservationStatus.CANCELLED,
+                updated.getStatus()
+        );
+    }
+
 
 }
