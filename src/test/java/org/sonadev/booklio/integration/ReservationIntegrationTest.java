@@ -153,4 +153,36 @@ class ReservationIntegrationTest {
         );
     }
 
+    /* CONFLICTS  */
+    @Test
+    void ShouldReturnConflictWhenUpdatingWithOverlappingDates() throws Exception {
+        User user = userRepository.findAll().get(0);
+
+        Resource resource = resourceRepository.findAll().get(0);
+
+        Reservation reservation2 = new Reservation();
+
+        reservation2.setUser(user);
+        reservation2.setResource(resource);
+
+        reservation2.setStartDate(LocalDate.of(2026, 7, 5));
+        reservation2.setEndDate(LocalDate.of(2026, 7, 15));
+
+        reservation2.setStatus(ReservationStatus.CONFIRMED);
+
+        reservationRepository.save(reservation2);
+
+        Reservation reservation1 = reservationRepository.findAll().get(0);
+
+        mockMvc.perform(put("/reservations/" + reservation1.getId())
+                .contentType("application/json")
+                .content("""
+                {
+                    "startDate": "2026-07-10",
+                    "endDate": "2026-07-20"
+                }
+                """))
+                .andExpect(status().isConflict());
+    }
+
 }
