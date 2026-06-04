@@ -1,8 +1,12 @@
 package org.sonadev.booklio.service;
 
 import lombok.AllArgsConstructor;
+import org.sonadev.booklio.config.JwtService;
+import org.sonadev.booklio.dto.AuthResponse;
+import org.sonadev.booklio.dto.LoginRequest;
 import org.sonadev.booklio.dto.RegisterRequest;
 import org.sonadev.booklio.exception.InvalidReservationException;
+import org.sonadev.booklio.exception.ResourceNotFoundException;
 import org.sonadev.booklio.model.Role;
 import org.sonadev.booklio.model.User;
 import org.sonadev.booklio.repository.UserRepository;
@@ -15,10 +19,13 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private final JwtService jwtService;
 
     // Register User
     public void register(RegisterRequest request) {
@@ -35,6 +42,22 @@ public class AuthService {
         user.setRole(Role.USER);
 
         userRepository.save(user);
+    }
+
+    // Login
+    public AuthResponse login(LoginRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("Invalid credentials"));
+
+        boolean matches = passwordEncoder.matches(request.getPassword(), user.getPassword());
+
+        if(!matches) {
+            throw new ResourceNotFoundException("Invalid credentials");
+        }
+
+        String token = jwtService.generateToken(user);
+
+        return new AuthResponse(token);
     }
 
 }
