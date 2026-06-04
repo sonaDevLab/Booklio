@@ -1,6 +1,8 @@
 package org.sonadev.booklio.controller;
 
 import lombok.AllArgsConstructor;
+import org.sonadev.booklio.dto.AuthResponse;
+import org.sonadev.booklio.dto.LoginRequest;
 import org.sonadev.booklio.dto.RegisterRequest;
 import org.sonadev.booklio.service.AuthService;
 import org.springframework.http.HttpStatus;
@@ -17,10 +19,17 @@ public class AuthController {
 
     private final AuthService authService;
 
+    // Register
     @PostMapping("/register")
     public ResponseEntity<Void> register(@RequestBody RegisterRequest request) {
         authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    // Login
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.login(request));
     }
 
 }
