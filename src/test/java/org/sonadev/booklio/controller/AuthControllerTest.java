@@ -1,6 +1,8 @@
 package org.sonadev.booklio.controller;
 
 import org.junit.jupiter.api.Test;
+import org.sonadev.booklio.dto.AuthResponse;
+import org.sonadev.booklio.exception.InvalidCredentialsException;
 import org.sonadev.booklio.exception.InvalidReservationException;
 import org.sonadev.booklio.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +23,7 @@ public class AuthControllerTest {
     @MockitoBean
     private AuthService authService;
 
+    /* REGISTER */
     @Test
     void shouldRegisterUserSuccessfully() throws Exception {
         mockMvc.perform(post("/auth/register")
@@ -53,6 +56,42 @@ public class AuthControllerTest {
                """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Email already in use"));
+    }
+
+    /* LOGIN */
+    @Test
+    void shouldLoginSuccessfully() throws Exception {
+        when(authService.login(any()))
+                .thenReturn(new AuthResponse("fake-jwt"));
+
+        mockMvc.perform(post("/auth/login")
+                .contentType("application/json")
+                .content("""
+                {
+                    "email": "sona@gmail.com",
+                    "password": "123456"
+                }
+                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("fake-jwt"));
+
+        verify(authService).login(any());
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenCredentialsAreInvalid() throws Exception {
+        when(authService.login(any()))
+                .thenThrow(new InvalidCredentialsException("Invalid credentials"));
+
+        mockMvc.perform(post("/auth/login")
+                .contentType("application/json")
+                .content("""
+               {
+                    "email": "sona@gmail.com",
+                    "password": "wrong"
+               }
+               """))
+                .andExpect(status().isUnauthorized());
     }
 
 }
