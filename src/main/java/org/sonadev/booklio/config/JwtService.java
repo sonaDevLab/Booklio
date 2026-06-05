@@ -6,6 +6,7 @@ import org.sonadev.booklio.model.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
@@ -20,6 +21,7 @@ public class JwtService {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
+    // Generate Token
     public String generateToken(User user) {
         return Jwts.builder()
                 .subject(user.getEmail())
@@ -28,6 +30,16 @@ public class JwtService {
                 .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
                 .signWith(getSigningKey())
                 .compact();
+    }
+
+    // Extract Email
+    public String extractEmail(String token) {
+        return Jwts.parser()
+                .verifyWith((SecretKey) getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getSubject();
     }
 
 }
