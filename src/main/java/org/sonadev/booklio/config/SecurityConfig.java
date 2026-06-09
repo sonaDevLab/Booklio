@@ -1,5 +1,6 @@
 package org.sonadev.booklio.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,7 +39,16 @@ public class SecurityConfig {
                 .addFilterBefore(
                         jwtAuthFilter,
                         UsernamePasswordAuthenticationFilter.class
-                );
+                )
+                .exceptionHandling(ex ->
+                      ex.authenticationEntryPoint(
+                              (request, response, authException) ->
+                                      response.sendError(
+                                              HttpServletResponse.SC_UNAUTHORIZED,
+                                              "Unauthorized"
+                                      )
+                      )
+               );
 
         return http.build();
     }
