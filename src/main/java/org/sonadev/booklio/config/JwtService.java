@@ -52,5 +52,9 @@ public class JwtService {
                 .getPayload();
     }
 
+    // Extract Expiration
+    public Date extractExpiration(String token) {
+        return extractClaims(token).getExpiration();
+    }
 
 }
