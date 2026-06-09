@@ -6,9 +6,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.sonadev.booklio.service.AuthService;
+import org.sonadev.booklio.service.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -21,6 +23,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Autowired
     private final JwtService jwtService;
+
+    private final CustomUserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(
@@ -40,11 +44,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String email = jwtService.extractEmail(token);
 
+        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+
         UsernamePasswordAuthenticationToken authToken =
                 new UsernamePasswordAuthenticationToken(
                         email,
                         null,
-                        List.of()
+                        userDetails.getAuthorities()
                 );
 
         SecurityContextHolder.getContext().setAuthentication(authToken);
