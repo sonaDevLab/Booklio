@@ -1,5 +1,6 @@
 package org.sonadev.booklio.config;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.sonadev.booklio.model.User;
@@ -41,5 +42,15 @@ public class JwtService {
                 .getPayload()
                 .getSubject();
     }
+
+    // Extract Claims
+    public Claims extractClaims(String token) {
+        return Jwts.parser()
+                .verifyWith((SecretKey) getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
 
 }
