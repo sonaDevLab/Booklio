@@ -2,6 +2,7 @@ package org.sonadev.booklio.repository;
 
 import org.sonadev.booklio.dto.ReservationResponse;
 import org.sonadev.booklio.model.Reservation;
+import org.sonadev.booklio.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -18,6 +19,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
         AND r.endDate > :startDate
     """)
     List<Reservation> findConflicts(Long resourceId, LocalDate startDate, LocalDate endDate);
+
+    List<Reservation> findByUser(User user);
 
     List<Reservation> findByUserId(Long userId);
 

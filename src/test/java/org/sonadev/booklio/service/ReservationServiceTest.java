@@ -5,7 +5,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.sonadev.booklio.dto.ReservationRequest;
+import org.sonadev.booklio.dto.CreateReservationRequest;
 import org.sonadev.booklio.dto.ReservationResponse;
 import org.sonadev.booklio.dto.UpdateReservationRequest;
 import org.sonadev.booklio.exception.InvalidReservationException;
@@ -82,7 +82,7 @@ public class ReservationServiceTest {
     @Test
     void shouldCreateReservationSuccessfully(){
         // ARRANGE
-        ReservationRequest dto = new ReservationRequest();
+        CreateReservationRequest dto = new CreateReservationRequest();
         dto.setUserId(1L);
         dto.setResourceId(1L);
         dto.setStartDate(LocalDate.now());
@@ -133,7 +133,7 @@ public class ReservationServiceTest {
 
     @Test
     void shouldNotSaveReservationWhenConflictsExist(){
-        ReservationRequest dto = new ReservationRequest();
+        CreateReservationRequest dto = new CreateReservationRequest();
         dto.setUserId(1L);
         dto.setResourceId(1L);
         dto.setStartDate(LocalDate.now());
@@ -169,7 +169,7 @@ public class ReservationServiceTest {
 
     @Test
     void shouldThrowExceptionWhenStartDateIsAfterEndDate(){
-        ReservationRequest dto = new ReservationRequest();
+        CreateReservationRequest dto = new CreateReservationRequest();
         dto.setStartDate(LocalDate.now().plusDays(5));
         dto.setEndDate(LocalDate.now());
 

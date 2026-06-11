@@ -1,7 +1,7 @@
 package org.sonadev.booklio.controller;
 
 import jakarta.validation.Valid;
-import org.sonadev.booklio.dto.ReservationRequest;
+import org.sonadev.booklio.dto.CreateReservationRequest;
 import org.sonadev.booklio.dto.ReservationResponse;
 import org.sonadev.booklio.dto.UpdateReservationRequest;
 import org.sonadev.booklio.service.ReservationService;
@@ -37,7 +37,7 @@ public class ReservationController {
 
     // Create reservation
     @PostMapping
-    public ResponseEntity<ReservationResponse> create(@Valid @RequestBody ReservationRequest request) {
+    public ResponseEntity<ReservationResponse> create(@Valid @RequestBody CreateReservationRequest request) {
         return ResponseEntity.ok(reservationService.createReservation(request));
     }
 
@@ -62,9 +62,9 @@ public class ReservationController {
     }
 
     //by userId
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<ReservationResponse>> getByUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(reservationService.getByUser(userId));
+    @GetMapping("/me")
+    public ResponseEntity<List<ReservationResponse>> getMyReservations() {
+        return ResponseEntity.ok(reservationService.getMyReservations());
     }
 
     //by resourceId
@@ -90,7 +90,7 @@ public class ReservationController {
     @PutMapping("/{id}")
     public ResponseEntity<ReservationResponse> updateReservation(
             @PathVariable Long id,
-            @RequestBody UpdateReservationRequest request
+            @Valid @RequestBody UpdateReservationRequest request
     ){
         return ResponseEntity.ok(
                 reservationService.updateReservation(id, request)
