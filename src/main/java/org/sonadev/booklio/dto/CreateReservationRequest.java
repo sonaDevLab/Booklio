@@ -9,10 +9,7 @@ import java.time.LocalDate;
 
 @Getter
 @Setter
-public class ReservationRequest {
-
-    @NotNull(message = "UserId is required")
-    private Long userId;
+public class CreateReservationRequest {
 
     @NotNull(message = "ResourceId is required")
     private Long resourceId;

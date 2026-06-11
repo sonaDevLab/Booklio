@@ -1,6 +1,7 @@
 package org.sonadev.booklio.service;
 
-import org.sonadev.booklio.dto.ReservationRequest;
+import lombok.AllArgsConstructor;
+import org.sonadev.booklio.dto.CreateReservationRequest;
 import org.sonadev.booklio.dto.ReservationResponse;
 import org.sonadev.booklio.dto.UpdateReservationRequest;
 import org.sonadev.booklio.exception.InvalidReservationException;
@@ -15,23 +16,19 @@ import org.sonadev.booklio.repository.ResourceRepository;
 import org.sonadev.booklio.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
 
+@AllArgsConstructor
 @Service
 public class ReservationService {
 
     private final ReservationRepository reservationRepository;
-    private final UserRepository userRepository;
     private final ResourceRepository resourceRepository;
-
-    public ReservationService(ReservationRepository reservationRepository, UserRepository userRepository, ResourceRepository resourceRepository) {
-        this.reservationRepository = reservationRepository;
-        this.userRepository = userRepository;
-        this.resourceRepository = resourceRepository;
-    }
+    private final SecurityService securityService;
 
     //Check if there's any available date for the reservation
     public boolean isAvailable(Long resourceId, LocalDate startDate, LocalDate endDate) {
@@ -58,7 +55,7 @@ public class ReservationService {
     }
 
     //Create Reservation
-    public ReservationResponse createReservation(ReservationRequest dto){
+    public ReservationResponse createReservation(CreateReservationRequest dto){
 
         // Dates Validation
         if(dto.getStartDate().isAfter(dto.getEndDate())){
@@ -66,8 +63,7 @@ public class ReservationService {
         }
 
         // Search for user and resource
-        User user = userRepository.findById(dto.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        User user = securityService.getAuthenticatedUser();
 
         Resource resource = resourceRepository.findById(dto.getResourceId())
                 .orElseThrow(() -> new ResourceNotFoundException("Resource not found"));
@@ -104,15 +100,23 @@ public class ReservationService {
 
     //Get Reservation (reservationId)
     public ReservationResponse getReservationById(Long reservationId){
+        User user = securityService.getAuthenticatedUser();
+
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reservation not found"));
+
+        if(!reservation.getUser().getId().equals(user.getId())){
+            throw new AccessDeniedException("Not your reservation");
+        }
 
         return mapToDTO(reservation);
     }
 
     //Get Reservation (userID)
-    public List<ReservationResponse> getByUser(Long userId) {
-        return reservationRepository.findByUserId(userId)
+    public List<ReservationResponse> getMyReservations() {
+        User user = securityService.getAuthenticatedUser();
+
+        return reservationRepository.findByUser(user)
                 .stream()
                 .map(this::mapToDTO)
                 .toList();
@@ -136,9 +140,15 @@ public class ReservationService {
 
     //Cancel Reservation
     public void cancelReservation(Long reservationId){
+        User user = securityService.getAuthenticatedUser();
+
         Reservation reservation = reservationRepository
                 .findById(reservationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reservation not found"));
+
+        if(!reservation.getUser().getId().equals(user.getId())){
+            throw new AccessDeniedException("Not your reservation");
+        }
 
         // NO Double Cancellation
         if(reservation.getStatus() == ReservationStatus.CANCELLED){
@@ -152,9 +162,15 @@ public class ReservationService {
 
     //Update Reservation
     public ReservationResponse updateReservation(Long reservationId, UpdateReservationRequest request){
+        User user = securityService.getAuthenticatedUser();
+
         Reservation reservation = reservationRepository
                 .findById(reservationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reservation not found"));
+
+        if(!reservation.getUser().getId().equals(user.getId())){
+            throw new AccessDeniedException("Not your reservation");
+        }
 
         if(reservation.getStatus() == ReservationStatus.CANCELLED){
             throw new InvalidReservationException("Cannot modify a cancelled reservation");
