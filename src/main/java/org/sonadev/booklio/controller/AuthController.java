@@ -1,5 +1,6 @@
 package org.sonadev.booklio.controller;
 
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.sonadev.booklio.dto.AuthResponse;
 import org.sonadev.booklio.dto.LoginRequest;
@@ -21,7 +22,7 @@ public class AuthController {
 
     // Register
     @PostMapping("/register")
-    public ResponseEntity<Void> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequest request) {
         authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
