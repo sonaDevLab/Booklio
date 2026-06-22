@@ -17,7 +17,6 @@ import org.sonadev.booklio.model.Resource;
 import org.sonadev.booklio.model.User;
 import org.sonadev.booklio.repository.ReservationRepository;
 import org.sonadev.booklio.repository.ResourceRepository;
-import org.sonadev.booklio.repository.UserRepository;
 import org.springframework.data.domain.*;
 
 import java.time.LocalDate;
