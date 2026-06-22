@@ -185,6 +185,29 @@ public class ReservationServiceTest {
         assertEquals("Start date cannot be after end date", exception.getMessage());
     }
 
+    @Test
+    void shouldThrowExceptionWhenResourceNotFound(){
+        CreateReservationRequest dto = new CreateReservationRequest();
+        dto.setResourceId(99L);
+        dto.setStartDate(LocalDate.now());
+        dto.setEndDate(LocalDate.now().plusDays(2));
+
+        User user = new User();
+        user.setId(1L);
+
+        when(securityService.getAuthenticatedUser())
+            .thenReturn(user);
+
+        when(resourceRepository.findById(99L))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                ResourceNotFoundException.class,
+                () -> reservationService.createReservation(dto));
+
+        verify(resourceRepository, never()).save(any());
+    }
+
     /* GET */
     @Test
     void shouldReturnPaginatedReservations() {
@@ -461,4 +484,43 @@ public class ReservationServiceTest {
         verify(reservationRepository, never()).save(any());
     }
 
+    @Test
+    void shouldThrowConflictWhenUpdatingWithOverlappingDates(){
+        User user = new User();
+        user.setId(1L);
+
+        Resource resource = new Resource();
+        resource.setId(1L);
+
+        Reservation reservation = new Reservation();
+        reservation.setId(1L);
+        reservation.setUser(user);
+        reservation.setResource(resource);
+        reservation.setStatus(ReservationStatus.CONFIRMED);
+
+        Reservation conflicting = new Reservation();
+        conflicting.setId(2L);
+
+        UpdateReservationRequest request = new UpdateReservationRequest();
+        request.setStartDate(LocalDate.now().plusDays(1));
+        request.setEndDate(LocalDate.now().plusDays(5));
+
+        when(securityService.getAuthenticatedUser())
+                .thenReturn(user);
+
+        when(reservationRepository.findById(1L))
+                .thenReturn(Optional.of(reservation));
+
+        when(reservationRepository.findConflicts(
+                anyLong(),
+                any(LocalDate.class),
+                any(LocalDate.class)
+        )).thenReturn(List.of(conflicting));
+
+        assertThrows(
+                ReservationConflictException.class,
+                () -> reservationService.updateReservation(1L, request));
+
+        verify(reservationRepository, never()).save(any());
+    }
 }
