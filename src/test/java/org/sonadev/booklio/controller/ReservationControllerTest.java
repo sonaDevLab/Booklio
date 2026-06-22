@@ -76,6 +76,7 @@ class ReservationControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldReturnConflictWhenServiceFails() throws Exception {
 
         when(reservationService.createReservation(any()))
@@ -100,6 +101,26 @@ class ReservationControllerTest {
 
     @Test
     @WithMockUser
+    void shouldReturnConflictWhenResourceAlreadyBooked() throws Exception {
+        when(reservationService.createReservation(any()))
+                .thenThrow(new ReservationConflictException("Resource not available"));
+
+        mockMvc.perform(post("/reservations")
+                .contentType("application/json")
+                .content("""
+                {
+                    "resourceId": 1,
+                    "startDate": "2026-08-20",
+                    "endDate": "2026-08-25"
+                }
+                """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error").value("Resource not available"));
+    }
+
+    @Test
+    @WithMockUser
     void shouldReturnBadRequestWhenResourceIdIsNull() throws Exception {
         mockMvc.perform(post("/reservations")
                 .contentType("application/json")
@@ -113,6 +134,23 @@ class ReservationControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.error").value("ResourceId is required"));
+    }
+
+    @Test
+    @WithMockUser
+    void shouldReturnBadRequestWhenStartDateIsInThePast() throws Exception {
+        mockMvc.perform(post("/reservations")
+                .contentType("application/json")
+                .content("""
+                {
+                    "resourceId": 1,
+                    "startDate": "2024-08-20",
+                    "endDate": "2026-08-25"
+                }
+                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Start date must be today or future"));
     }
 
     /* GET */
