@@ -36,15 +36,15 @@ public class ReservationServiceTest {
     private ReservationRepository reservationRepository;
 
     @Mock
-    private UserRepository userRepository;
+    private ResourceRepository resourceRepository;
 
     @Mock
-    private ResourceRepository resourceRepository;
+    private SecurityService securityService;
 
     @InjectMocks
     private ReservationService reservationService;
 
-    /* CREATE */
+    /* AVAILABILITY */
     @Test
     void shouldReturnTrueWhenNoConflictsExist(){
         when(reservationRepository.findConflicts(
@@ -79,11 +79,11 @@ public class ReservationServiceTest {
         assertFalse(result);
     }
 
+    /* CREATE */
     @Test
     void shouldCreateReservationSuccessfully(){
         // ARRANGE
         CreateReservationRequest dto = new CreateReservationRequest();
-        dto.setUserId(1L);
         dto.setResourceId(1L);
         dto.setStartDate(LocalDate.now());
         dto.setEndDate(LocalDate.now().plusDays(2));
@@ -98,12 +98,13 @@ public class ReservationServiceTest {
         saved.setId(100L);
         saved.setUser(user);
         saved.setResource(resource);
+        saved.setStatus(ReservationStatus.CONFIRMED);
         saved.setStartDate(dto.getStartDate());
         saved.setEndDate(dto.getEndDate());
 
         // MOCK userRepository
-        when(userRepository.findById(1L))
-                .thenReturn(Optional.of(user));
+        when(securityService.getAuthenticatedUser())
+                .thenReturn(user);
 
         // MOCK resourceRepository
         when(resourceRepository.findById(1L))
@@ -125,6 +126,10 @@ public class ReservationServiceTest {
 
         // ASSERT
         assertNotNull(result);
+        assertEquals(100L, result.getId());
+        assertEquals(1L, result.getUserId());
+        assertEquals(1L, result.getResourceId());
+        assertEquals(ReservationStatus.CONFIRMED, result.getStatus());
 
         // VERIFY
         verify(reservationRepository, times(1))
@@ -134,7 +139,6 @@ public class ReservationServiceTest {
     @Test
     void shouldNotSaveReservationWhenConflictsExist(){
         CreateReservationRequest dto = new CreateReservationRequest();
-        dto.setUserId(1L);
         dto.setResourceId(1L);
         dto.setStartDate(LocalDate.now());
         dto.setEndDate(LocalDate.now().plusDays(2));
@@ -145,8 +149,8 @@ public class ReservationServiceTest {
         Resource resource = new Resource();
         resource.setId(1L);
 
-        when(userRepository.findById(1L))
-                .thenReturn(Optional.of(user));
+        when(securityService.getAuthenticatedUser())
+                .thenReturn(user);
 
         when(resourceRepository.findById(1L))
                 .thenReturn(Optional.of(resource));
@@ -197,7 +201,7 @@ public class ReservationServiceTest {
         Page<ReservationResponse> result = reservationService.getAllReservations(pageable);
 
         assertEquals(1, result.getContent().size());
-        assertEquals(1, result.getContent().get(0).getId());
+        assertEquals(1L, result.getContent().get(0).getId());
 
         verify(reservationRepository).findAll(pageable);
     }
@@ -244,13 +248,20 @@ public class ReservationServiceTest {
 
     @Test
     void shouldReturnReservationById() {
+        User user = new User();
+        user.setId(1L);
+
         Reservation reservation = new Reservation();
         reservation.setId(1L);
+        reservation.setUser(user);
+
+        when(securityService.getAuthenticatedUser())
+                .thenReturn(user);
 
         when(reservationRepository.findById(1L))
                 .thenReturn(Optional.of(reservation));
 
-        var result = reservationService.getReservationById(1L);
+        ReservationResponse result = reservationService.getReservationById(1L);
 
         assertEquals(1L, result.getId());
 
@@ -259,32 +270,45 @@ public class ReservationServiceTest {
 
     @Test
     void shouldThrowExceptionWhenReservationNotFound() {
+        User user = new User();
+        user.setId(1L);
+
+        when(securityService.getAuthenticatedUser())
+                .thenReturn(user);
+
         when(reservationRepository.findById(1L))
                 .thenReturn(Optional.empty());
 
-        ResourceNotFoundException exception = assertThrows(
+        ResourceNotFoundException ex = assertThrows(
                 ResourceNotFoundException.class,
                 () -> reservationService.getReservationById(1L)
         );
 
-        assertEquals("Reservation not found", exception.getMessage());
+        assertEquals("Reservation not found", ex.getMessage());
 
         verify(reservationRepository).findById(1L);
     }
 
     @Test
-    void shouldReturnReservationsByUser() {
+    void shouldReturnMyReservations() {
+        User user = new User();
+        user.setId(1L);
+
         Reservation reservation = new Reservation();
         reservation.setId(1L);
+        reservation.setUser(user);
 
-        when(reservationRepository.findByUserId(1L))
+        when(securityService.getAuthenticatedUser())
+                .thenReturn(user);
+
+        when(reservationRepository.findByUser(user))
                 .thenReturn(List.of(reservation));
 
-        var result = reservationService.getByUser(1L);
+        List<ReservationResponse> result = reservationService.getMyReservations();
 
         assertEquals(1, result.size());
 
-        verify(reservationRepository).findByUserId(1L);
+        verify(reservationRepository).findByUser(user);
     }
 
     @Test
@@ -295,7 +319,7 @@ public class ReservationServiceTest {
         when(reservationRepository.findByResourceId(1L))
                 .thenReturn(List.of(reservation));
 
-        var result = reservationService.getByResource(1L);
+        List<ReservationResponse> result = reservationService.getByResource(1L);
 
         assertEquals(1, result.size());
 
@@ -307,13 +331,13 @@ public class ReservationServiceTest {
         Reservation reservation = new Reservation();
         reservation.setId(1L);
 
-        LocalDate startDate = LocalDate.of(2026, 6, 1);
-        LocalDate endDate = LocalDate.of(2026, 6, 10);
+        LocalDate startDate = LocalDate.of(2026, 8, 1);
+        LocalDate endDate = LocalDate.of(2026, 8, 10);
 
         when(reservationRepository.findByDateRange(startDate, endDate))
                 .thenReturn(List.of(reservation));
 
-        var result = reservationService.getByDateRange(startDate, endDate);
+        List<ReservationResponse> result = reservationService.getByDateRange(startDate, endDate);
 
         assertEquals(1, result.size());
 
@@ -323,9 +347,16 @@ public class ReservationServiceTest {
     /* CANCEL */
     @Test
     void shouldCancelReservationSuccessfully(){
+        User user = new User();
+        user.setId(1L);
+
         Reservation reservation = new Reservation();
         reservation.setId(1L);
+        reservation.setUser(user);
         reservation.setStatus(ReservationStatus.CONFIRMED);
+
+        when(securityService.getAuthenticatedUser())
+                .thenReturn(user);
 
         when(reservationRepository.findById(1L))
                 .thenReturn(Optional.of(reservation));
@@ -339,8 +370,16 @@ public class ReservationServiceTest {
 
     @Test
     void shouldThrowExceptionWhenReservationAlreadyCancelled(){
+        User user = new User();
+        user.setId(1L);
+
         Reservation reservation = new Reservation();
+        reservation.setId(1L);
+        reservation.setUser(user);
         reservation.setStatus(ReservationStatus.CANCELLED);
+
+        when(securityService.getAuthenticatedUser())
+                .thenReturn(user);
 
         when(reservationRepository.findById(1L))
                 .thenReturn(Optional.of(reservation));
@@ -356,22 +395,24 @@ public class ReservationServiceTest {
     /* UPDATE */
     @Test
     void shouldUpdateReservationSuccessfully(){
-        Reservation reservation = new Reservation();
-        reservation.setId(1L);
-        reservation.setStatus(ReservationStatus.CONFIRMED);
-
         User user = new User();
         user.setId(1L);
 
         Resource resource = new Resource();
         resource.setId(1L);
 
+        Reservation reservation = new Reservation();
+        reservation.setId(1L);
         reservation.setUser(user);
         reservation.setResource(resource);
+        reservation.setStatus(ReservationStatus.CONFIRMED);
 
         UpdateReservationRequest request = new UpdateReservationRequest();
         request.setStartDate(LocalDate.now().plusDays(1));
         request.setEndDate(LocalDate.now().plusDays(3));
+
+        when(securityService.getAuthenticatedUser())
+                .thenReturn(user);
 
         when(reservationRepository.findById(1L))
                 .thenReturn(Optional.of(reservation));
@@ -393,9 +434,17 @@ public class ReservationServiceTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenReservationIsCancelled(){
+    void shouldThrowExceptionWhenUpdatingCancelledReservation(){
+        User user = new User();
+        user.setId(1L);
+
         Reservation reservation = new Reservation();
+        reservation.setId(1L);
+        reservation.setUser(user);
         reservation.setStatus(ReservationStatus.CANCELLED);
+
+        when(securityService.getAuthenticatedUser())
+                .thenReturn(user);
 
         when(reservationRepository.findById(1L))
                 .thenReturn(Optional.of(reservation));
