@@ -1,11 +1,13 @@
 package org.sonadev.booklio.controller;
 
 import org.junit.jupiter.api.Test;
+import org.sonadev.booklio.config.JwtService;
 import org.sonadev.booklio.dto.ReservationResponse;
 import org.sonadev.booklio.exception.GlobalExceptionHandler;
 import org.sonadev.booklio.exception.InvalidReservationException;
 import org.sonadev.booklio.exception.ReservationConflictException;
 import org.sonadev.booklio.exception.ResourceNotFoundException;
+import org.sonadev.booklio.service.CustomUserDetailsService;
 import org.sonadev.booklio.service.ReservationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -13,6 +15,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -27,14 +30,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(GlobalExceptionHandler.class)
 class ReservationControllerTest {
 
-    @MockitoBean
-    private ReservationService reservationService;
-
     @Autowired
     private MockMvc mockMvc;
 
+    @MockitoBean
+    private ReservationService reservationService;
+
+    @MockitoBean
+    private JwtService jwtService;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
+
     /* CREATE */
     @Test
+    @WithMockUser
     void shouldCreateReservation() throws Exception {
 
         // ARRANGE
@@ -42,8 +52,8 @@ class ReservationControllerTest {
         response.setId(1L);
         response.setUserId(1L);
         response.setResourceId(1L);
-        response.setStartDate(LocalDate.of(2026, 5, 10));
-        response.setEndDate(LocalDate.of(2026, 5, 12));
+        response.setStartDate(LocalDate.of(2026, 8, 10));
+        response.setEndDate(LocalDate.of(2026, 8, 12));
 
         when(reservationService.createReservation(any()))
                 .thenReturn(response);
@@ -53,10 +63,9 @@ class ReservationControllerTest {
                 .contentType("application/json")
                 .content("""
                 {
-                    "userId": 1,
                     "resourceId": 1,
-                    "startDate": "2026-05-20",
-                    "endDate": "2026-05-25"
+                    "startDate": "2026-08-20",
+                    "endDate": "2026-08-25"
                 }
                 """))
                 .andExpect(status().isOk())
@@ -78,8 +87,8 @@ class ReservationControllerTest {
                 {
                     "userId": 1,
                     "resourceId": 1,
-                    "startDate": "2026-05-20",
-                    "endDate": "2026-05-25"
+                    "startDate": "2026-08-20",
+                    "endDate": "2026-08-25"
                 }
                 """))
                 .andExpect(status().isConflict())
@@ -90,26 +99,27 @@ class ReservationControllerTest {
     }
 
     @Test
-    void shouldReturnBadRequestWhenUserIdIsNull() throws Exception {
+    @WithMockUser
+    void shouldReturnBadRequestWhenResourceIdIsNull() throws Exception {
         mockMvc.perform(post("/reservations")
                 .contentType("application/json")
                 .content("""
                 {
-                    "userId": null,
-                    "resourceId": 1,
-                    "startDate": "2026-05-20",
-                    "endDate": "2026-05-25"
+                    "resourceId": null,
+                    "startDate": "2026-08-20",
+                    "endDate": "2026-08-25"
                 }
                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("UserId is required"));
+                .andExpect(jsonPath("$.error").value("ResourceId is required"));
     }
 
     /* GET */
 
     //get All
     @Test
+    @WithMockUser
     void shouldGetPaginatedReservations() throws Exception {
         ReservationResponse response = new ReservationResponse();
         response.setId(1L);
@@ -127,6 +137,7 @@ class ReservationControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldGetSortedReservations() throws Exception {
         ReservationResponse response = new ReservationResponse();
         response.setId(1L);
@@ -146,6 +157,7 @@ class ReservationControllerTest {
 
     //by reservationId
     @Test
+    @WithMockUser
     void shouldGetReservationById() throws Exception {
         ReservationResponse response = new ReservationResponse();
         response.setId(1L);
@@ -159,6 +171,7 @@ class ReservationControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldReturnNotFoundWhenReservationDoesNotExist() throws Exception {
         when(reservationService.getReservationById(1L))
                 .thenThrow(new ResourceNotFoundException("Reservation not found"));
@@ -171,15 +184,16 @@ class ReservationControllerTest {
 
     //by user
     @Test
+    @WithMockUser
     void shouldGetReservationByUser() throws Exception {
         ReservationResponse response = new ReservationResponse();
         response.setId(1L);
         response.setUserId(1L);
 
-        when(reservationService.getByUser(1L))
+        when(reservationService.getMyReservations())
                 .thenReturn(List.of(response));
 
-        mockMvc.perform(get("/reservations/user/1"))
+        mockMvc.perform(get("/reservations/me"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].userId").value(1));
@@ -187,6 +201,7 @@ class ReservationControllerTest {
 
     //by resource
     @Test
+    @WithMockUser
     void shouldGetReservationByResource() throws Exception {
         ReservationResponse response = new ReservationResponse();
         response.setId(1L);
@@ -202,6 +217,7 @@ class ReservationControllerTest {
 
     //by date range
     @Test
+    @WithMockUser
     void shouldGetReservationByDateRange() throws Exception {
         ReservationResponse response = new ReservationResponse();
         response.setId(1L);
@@ -210,14 +226,15 @@ class ReservationControllerTest {
                 .thenReturn(List.of(response));
 
         mockMvc.perform(get("/reservations/by-date-range")
-                .param("startDate", "2026-06-01")
-                .param("endDate", "2026-06-10"))
+                .param("startDate", "2026-08-01")
+                .param("endDate", "2026-08-10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1));
     }
 
     /* CANCEL */
     @Test
+    @WithMockUser
     void shouldCancelReservation() throws Exception {
         doNothing().when(reservationService).cancelReservation(1L);
 
@@ -228,6 +245,7 @@ class ReservationControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldReturnNotFoundWhenCancellingNonExistingReservation() throws Exception {
         doThrow(new ResourceNotFoundException("Reservation not found"))
                 .when(reservationService).cancelReservation(1L);
@@ -239,6 +257,7 @@ class ReservationControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldReturnBadRequestWhenReservationAlreadyCancelled() throws Exception {
         doThrow(new InvalidReservationException("Reservation is already cancelled"))
                 .when(reservationService).cancelReservation(1L);
@@ -251,13 +270,14 @@ class ReservationControllerTest {
 
     /* UPDATE  */
     @Test
+    @WithMockUser
     void shouldUpdateReservation() throws Exception {
         ReservationResponse response = new ReservationResponse();
         response.setId(1L);
         response.setUserId(1L);
         response.setResourceId(1L);
-        response.setStartDate(LocalDate.of(2026, 6, 1));
-        response.setEndDate(LocalDate.of(2026, 6, 5));
+        response.setStartDate(LocalDate.of(2026, 8, 1));
+        response.setEndDate(LocalDate.of(2026, 8, 5));
 
         when(reservationService.updateReservation(anyLong(), any()))
                 .thenReturn(response);
@@ -266,17 +286,18 @@ class ReservationControllerTest {
                 .contentType("application/json")
                 .content("""
                 {
-                    "startDate": "2026-06-01",
-                    "endDate": "2026-06-05"
+                    "startDate": "2026-08-01",
+                    "endDate": "2026-08-05"
                 }
                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.startDate").value("2026-06-01"))
-                .andExpect(jsonPath("$.endDate").value("2026-06-05"));
+                .andExpect(jsonPath("$.startDate").value("2026-08-01"))
+                .andExpect(jsonPath("$.endDate").value("2026-08-05"));
     }
 
     @Test
+    @WithMockUser
     void shouldReturnConflictWhenUpdatingReservation() throws Exception {
         when(reservationService.updateReservation(anyLong(), any()))
                 .thenThrow(new ReservationConflictException("Conflict"));
@@ -285,8 +306,8 @@ class ReservationControllerTest {
                 .contentType("application/json")
                 .content("""
                 {
-                    "startDate": "2026-06-01",
-                    "endDate": "2026-06-05"
+                    "startDate": "2026-08-01",
+                    "endDate": "2026-08-05"
                 }
                 """))
                 .andExpect(status().isConflict())
@@ -294,6 +315,7 @@ class ReservationControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldReturnNotFoundWhenUpdatingNonExistingReservation() throws Exception {
         when(reservationService.updateReservation(anyLong(), any()))
                 .thenThrow(new ResourceNotFoundException("Reservation not found"));
@@ -302,8 +324,8 @@ class ReservationControllerTest {
                 .contentType("application/json")
                 .content("""
                 {
-                    "startDate": "2026-06-01",
-                    "endDate": "2026-06-05"
+                    "startDate": "2026-08-01",
+                    "endDate": "2026-08-05"
                 }
                 """))
                 .andExpect(status().isNotFound())
@@ -312,6 +334,7 @@ class ReservationControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldReturnBadRequestWhenUpdatingCancelledReservation() throws Exception {
         when(reservationService.updateReservation(anyLong(), any()))
                 .thenThrow(new InvalidReservationException("Cannot modify a cancelled reservation"));
@@ -320,8 +343,8 @@ class ReservationControllerTest {
                 .contentType("application/json")
                 .content("""
                 {
-                    "startDate": "2026-06-01",
-                    "endDate": "2026-06-05"
+                    "startDate": "2026-08-01",
+                    "endDate": "2026-08-05"
                 }
                 """))
                 .andExpect(status().isBadRequest())
