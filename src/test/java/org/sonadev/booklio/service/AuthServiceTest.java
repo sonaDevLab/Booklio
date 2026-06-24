@@ -101,18 +101,35 @@ public class AuthServiceTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenPasswoordIsWrong() {
+    void shouldThrowExceptionWhenUserNotFound() {
+        LoginRequest request = new LoginRequest();
+        request.setEmail("unknown@gmail.com");
+        request.setPassword("123456");
+
+        when(userRepository.findByEmail(any()))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                ResourceNotFoundException.class,
+                () -> authService.login(request));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenPasswordIsWrong() {
         LoginRequest request = new LoginRequest();
 
         request.setEmail("sona@gmail.com");
         request.setPassword("wrong");
 
         User user = new User();
-
-        user.setPassword(passwordEncoder.encode("123456"));
+        user.setEmail("sona@gmail.com");
+        user.setPassword("hashed-password");
 
         when(userRepository.findByEmail(any()))
                 .thenReturn(Optional.of(user));
+
+        when(passwordEncoder.matches("wrong", "hashed-password"))
+                .thenReturn(false);
 
         assertThrows(
                 ResourceNotFoundException.class,
