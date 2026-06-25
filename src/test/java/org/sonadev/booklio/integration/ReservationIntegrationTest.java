@@ -101,20 +101,20 @@ class ReservationIntegrationTest {
     @Test
     void shouldPersistReservationInDatabase() throws Exception {
         mockMvc.perform(post("/reservations")
+                .with(mockUser())
                 .contentType("application/json")
                 .content("""
                 {
-                    "userId": 1,
                     "resourceId": 1,
-                    "startDate": "2026-06-01",
-                    "endDate": "2026-06-05"
+                    "startDate": "2026-08-01",
+                    "endDate": "2026-08-05"
                 }
                 """))
                 .andExpect(status().isOk());
 
         List<Reservation> reservations = reservationRepository.findAll();
 
-        assertEquals(1, reservations.size());
+        assertEquals(2, reservations.size());
     }
 
     /* CANCEL */
@@ -124,7 +124,8 @@ class ReservationIntegrationTest {
 
         Long id = reservation.getId();
 
-        mockMvc.perform(patch("/reservations/" + id + "/cancel"))
+        mockMvc.perform(patch("/reservations/" + id + "/cancel")
+                        .with(mockUser()))
                 .andExpect(status().isNoContent());
 
         Reservation updated = reservationRepository.findById(id).orElseThrow();
@@ -143,27 +144,28 @@ class ReservationIntegrationTest {
         Long id = reservation.getId();
 
         mockMvc.perform(put("/reservations/" + id)
+                .with(mockUser())
                 .contentType("application/json")
                 .content("""
                 {
-                    "startDate": "2026-07-01",
-                    "endDate": "2026-07-10"
+                    "startDate": "2026-08-01",
+                    "endDate": "2026-08-10"
                 }
                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(id))
-                .andExpect(jsonPath("$.startDate").value("2026-07-01"))
-                .andExpect(jsonPath("$.endDate").value("2026-07-10"));
+                .andExpect(jsonPath("$.startDate").value("2026-08-01"))
+                .andExpect(jsonPath("$.endDate").value("2026-08-10"));
 
         Reservation updated = reservationRepository.findById(id).orElseThrow();
 
         assertEquals(
-                LocalDate.of(2026, 7, 1),
+                LocalDate.of(2026, 8, 1),
                 updated.getStartDate()
         );
 
         assertEquals(
-                LocalDate.of(2026, 7, 10),
+                LocalDate.of(2026, 8, 10),
                 updated.getEndDate()
         );
     }
@@ -172,7 +174,6 @@ class ReservationIntegrationTest {
     @Test
     void ShouldReturnConflictWhenUpdatingWithOverlappingDates() throws Exception {
         User user = userRepository.findAll().get(0);
-
         Resource resource = resourceRepository.findAll().get(0);
 
         Reservation reservation2 = new Reservation();
@@ -180,8 +181,8 @@ class ReservationIntegrationTest {
         reservation2.setUser(user);
         reservation2.setResource(resource);
 
-        reservation2.setStartDate(LocalDate.of(2026, 7, 5));
-        reservation2.setEndDate(LocalDate.of(2026, 7, 15));
+        reservation2.setStartDate(LocalDate.of(2026, 8, 5));
+        reservation2.setEndDate(LocalDate.of(2026, 8, 15));
 
         reservation2.setStatus(ReservationStatus.CONFIRMED);
 
@@ -190,11 +191,12 @@ class ReservationIntegrationTest {
         Reservation reservation1 = reservationRepository.findAll().get(0);
 
         mockMvc.perform(put("/reservations/" + reservation1.getId())
+                .with(mockUser())
                 .contentType("application/json")
                 .content("""
                 {
-                    "startDate": "2026-07-10",
-                    "endDate": "2026-07-20"
+                    "startDate": "2026-08-10",
+                    "endDate": "2026-08-20"
                 }
                 """))
                 .andExpect(status().isConflict());
