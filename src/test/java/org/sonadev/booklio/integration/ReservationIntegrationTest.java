@@ -2,18 +2,20 @@ package org.sonadev.booklio.integration;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.sonadev.booklio.model.Reservation;
-import org.sonadev.booklio.model.ReservationStatus;
-import org.sonadev.booklio.model.Resource;
-import org.sonadev.booklio.model.User;
+import org.sonadev.booklio.model.*;
 import org.sonadev.booklio.repository.ReservationRepository;
 import org.sonadev.booklio.repository.ResourceRepository;
 import org.sonadev.booklio.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.WebApplicationContext;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -29,6 +31,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class ReservationIntegrationTest {
 
     @Autowired
+    private WebApplicationContext context;
+
     private MockMvc mockMvc;
 
     @Autowired
@@ -40,11 +44,20 @@ class ReservationIntegrationTest {
     @Autowired
     private ReservationRepository reservationRepository;
 
+    private static final String TEST_USER_EMAIL = "sona@test.com";
+
     @BeforeEach
     void setup() {
+        mockMvc = MockMvcBuilders
+                .webAppContextSetup(context)
+                .apply(SecurityMockMvcConfigurers.springSecurity())
+                .build();
+
         User user = new User();
         user.setName("Sona");
-        user.setEmail("sona@test.com");
+        user.setEmail(TEST_USER_EMAIL);
+        user.setPassword("hashed");
+        user.setRole(Role.USER);
         user = userRepository.save(user);
 
         Resource resource = new Resource();
@@ -55,31 +68,33 @@ class ReservationIntegrationTest {
         Reservation reservation = new Reservation();
         reservation.setUser(user);
         reservation.setResource(resource);
-        reservation.setStartDate(LocalDate.of(2026, 6, 15));
-        reservation.setEndDate(LocalDate.of(2026, 6, 20));
+        reservation.setStartDate(LocalDate.of(2026, 8, 15));
+        reservation.setEndDate(LocalDate.of(2026, 8, 20));
         reservation.setStatus(ReservationStatus.CONFIRMED);
 
         reservationRepository.save(reservation);
+    }
+
+    private SecurityMockMvcRequestPostProcessors.UserRequestPostProcessor mockUser() {
+        return SecurityMockMvcRequestPostProcessors.user(TEST_USER_EMAIL).roles("USER");
     }
 
     /* CREATE */
     @Test
     void shouldCreateReservationInDatabase() throws Exception {
         mockMvc.perform(post("/reservations")
+                .with(mockUser())
                 .contentType("application/json")
                 .content("""
                 {
-                    "userId": 1,
                     "resourceId": 1,
-                    "startDate": "2026-06-01",
-                    "endDate": "2026-06-05"
+                    "startDate": "2026-08-01",
+                    "endDate": "2026-08-05"
                 }
                 """))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.userId").value(1))
-                .andExpect(jsonPath("$.resourceId").value(1))
                 .andExpect(jsonPath("$.status").value("CONFIRMED"));
     }
 
